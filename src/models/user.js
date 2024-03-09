@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const validator = require('validator');
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
+const Task = require('../models/task')
 
 const userSchema = new mongoose.Schema({
     name: {
@@ -52,6 +53,12 @@ const userSchema = new mongoose.Schema({
     }]
 })
 
+userSchema.virtual('tasks' , {
+    ref: 'Task',
+    localField: '_id',
+    foreignField: 'owner'
+})
+
 userSchema.statics.findByCredentials = async (email , password)=>{
     const user = await User.findOne({email})
 
@@ -94,6 +101,8 @@ userSchema.pre('save' , async function (next){
     }
     next()
 })
+
+
 
 const User = mongoose.model('User' , userSchema)
 

@@ -1,47 +1,54 @@
 const express = require('express');
 const Task = require('../models/task')
+const auth = require('../middleware/authentication')
 const taskRouter = new express.Router();
 
-//Get all tasks
-taskRouter.get('/tasks' , async (req, res)=>{
+//Get all tasks for current user
+taskRouter.get('/tasks' , auth  , async (req, res)=>{
     try{
-        const task = await Task.find({});
-        if(!task){
-            return res.status(404).send
+        const task = await Task.find({owner: req.user._id})
+        if(task.$isEmpty){
+            res.status(404).send("Task not found")
         }
-        res.status(200).send()
+        res.status(200).send(task)
     }catch(err){
         res.status(500).send()
+
     }
 })
 
-//Get task by Id
-taskRouter.get('/tasks/:id' , (req, res)=>{
-    Task.findById(req.params.id).then((task)=>{
+//Get task by Id for current user
+taskRouter.get('/tasks/:id' , auth , async (req, res)=>{
+    const _id = req.params.id;
+    try{
+        const task = await Task.findOne({_id ,  owner: req.user._id})
         if(!task){
-            res.status(404).send("Couldn't find task with this ID")
+            res.status(404).send("Task not found")
         }
-        res.send(task);
-    }).catch((err)=>{
-        res.status(500);
-        console.log(err);
-        
-    })
+        res.status(200).send(task)
+    }catch(err){
+        res.status(500).send()
+
+    }
 })
 
 // Create Task
-taskRouter.post('/tasks' ,async (req, res)=>{
-    const task = new Task(req.body);
+taskRouter.post('/tasks' , auth  , async (req, res)=>{
+    const task = new Task({
+        ...req.body,
+        owner: req.user._id
+    })
+    
     try{
         await task.save();
-        res.status(201).send();
+        res.status(201).send(task);
     }catch(err){
         res.status(500).send(err.errors)
     }
 })
 
 //Update Task
-taskRouter.patch('/tasks/:id' , async (req , res)=>{
+taskRouter.patch('/tasks/:id' , auth  , async (req , res)=>{
     const updates = Object.keys(req.body)
     const allowupdates = ['description' , 'completed']
     const isValidOperation = updates.every((update)=> allowupdates.includes(update))
@@ -50,10 +57,12 @@ taskRouter.patch('/tasks/:id' , async (req , res)=>{
         return res.status(400).send({error: 'Invalid updates keys'})
     }
     try{
-        const task = await Task.findByIdAndUpdate(req.params.id , req.body , {new: true , runValidators: true} );
+        const task = await Task.findOne({_id: req.params.id  , owner: req.user._id})
         if(!task){
-            return res.status(404).send()
+            return res.status(404).send("Task not found")
         }
+        updates.forEach((update)=> task[update]= req.body[update])
+        await task.save()
         res.status(200).send(task);
     }catch(err){
         res.status(500).send()
@@ -62,11 +71,11 @@ taskRouter.patch('/tasks/:id' , async (req , res)=>{
 })
 
 //DELETE TASK
-taskRouter.delete('/tasks/:id' , async (req , res) => {
+taskRouter.delete('/tasks/:id' , auth  , async (req , res) => {
     try{
-        const task = await Task.findByIdAndDelete(req.params.id)
+        const task = await Task.findOneAndDelete({_id: req.params.id , owner: req.user.id})
         if(!task){
-            return res.status(404).send()
+            return res.status(404).send("Task not found")
         }
         res.status(200).send(task);
 

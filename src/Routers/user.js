@@ -2,6 +2,7 @@ const express = require('express')
 const User = require('../models/user')
 const auth = require('../middleware/authentication')
 const router = new express.Router()
+const Task = require('../models/task')
 
 //Get current user
 router.get('/users/me' , auth ,async (req, res)=>{
@@ -10,15 +11,24 @@ router.get('/users/me' , auth ,async (req, res)=>{
 })
 
 // DELETE CURRENT USER
-router.delete('/users/me', auth, async (req, res)=>{
+router.delete('/users/me', auth, async (req, res) => {
     try {
-        const user = await User.findByIdAndDelete(req.user.id)
-        res.status(200).send('User deleted successfully' + user)
+        const user = await User.findById(req.user.id);
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        await Task.deleteMany({ owner: req.user.id });
+        await User.deleteOne({ _id: req.user.id });
+
+        res.status(200).json({ message: 'User deleted successfully' });
+
     } catch (err) {
-        res.status(500).send(err);
-        console.log(err)
+        console.error(err);
+        res.status(500).json({ error: 'Internal Server Error' });
     }
 });
+
 
 //LOGOUT
 router.post('/users/logout' , auth , async (req , res)=>{
