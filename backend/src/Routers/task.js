@@ -4,6 +4,54 @@ const auth = require('../middleware/authentication')
 const taskRouter = new express.Router();
 
 //Get all tasks for current user
+
+/**
+ * @swagger
+ * /tasks:
+ *   get:
+ *     summary: Get tasks for the authenticated user
+ *     description: Retrieve tasks associated with the authenticated user.
+ *     tags:
+ *       - TaskRouter
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successful response with tasks for the user.
+ *         content:
+ *           application/json:
+ *             example:
+ *               [
+ *                 {
+ *                   "_id": "60f3a5418fdd65699c74b227",
+ *                   "title": "Sample Task",
+ *                   "description": "This is a sample task",
+ *                   "owner": "60f3a5418fdd65699c74b226",
+ *                   "createdAt": "2022-07-18T12:34:56.789Z",
+ *                   "updatedAt": "2022-07-18T12:34:56.789Z"
+ *                 },
+ *                 // Additional task objects
+ *               ]
+ *       404:
+ *         description: Task not found for the authenticated user.
+ *         content:
+ *           text/plain:
+ *             example: Task not found
+ *       500:
+ *         description: Internal server error.
+ *         content:
+ *           text/plain:
+ *             example: Internal Server Error
+ *
+ * @function
+ * @name getTasks
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @param {Function} next - Express next middleware function.
+ * @throws {Error} 404 - If tasks are not found for the authenticated user.
+ * @throws {Error} 500 - If there is an internal server error.
+ * @returns {Object} - The response object containing tasks or an error message.
+ */
 taskRouter.get('/tasks' , auth  , async (req, res)=>{
     try{
         const task = await Task.find({owner: req.user._id})
