@@ -12,7 +12,7 @@ const taskRouter = new express.Router();
  *     summary: Get tasks for the authenticated user
  *     description: Retrieve tasks associated with the authenticated user.
  *     tags:
- *       - TaskRouter
+ *       - Tasks
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -66,6 +66,47 @@ taskRouter.get('/tasks' , auth  , async (req, res)=>{
 })
 
 //Get task by Id for current user
+
+/**
+ * @swagger
+ * /tasks/{id}:
+ *   get:
+ *     summary: Get a task by ID
+ *     description: Retrieve a task based on its unique identifier.
+ *     tags:
+ *       - Tasks
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         description: The ID of the task to retrieve
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: header
+ *         name: Authorization
+ *         description: Bearer token for authentication
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Successful response with the retrieved task
+ *         content:
+ *           application/json:
+ *             example:
+ *               _id: taskId
+ *               owner: userId
+ *       404:
+ *         description: Task not found
+ *         content:
+ *           text/plain:
+ *             example: Task not found
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           text/plain:
+ *             example: Internal Server Error
+ */
 taskRouter.get('/tasks/:id' , auth , async (req, res)=>{
     const _id = req.params.id;
     try{
@@ -81,6 +122,45 @@ taskRouter.get('/tasks/:id' , auth , async (req, res)=>{
 })
 
 // Create Task
+/**
+ * @swagger
+ * /tasks:
+ *   post:
+ *     summary: Create a new task
+ *     description: Endpoint to create a new task.
+ *     tags:
+ *       - Tasks
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: body
+ *         name: task
+ *         description: The task object to be created.
+ *         required: true
+ *         schema:
+ *           $ref: '#/definitions/TaskInput'
+ *     responses:
+ *       201:
+ *         description: Successfully created task.
+ *         content:
+ *           application/json:
+ *             example:
+ *               _id: taskId
+ *       500:
+ *         description: Internal Server Error. Indicates a failure in task creation.
+ *         content:
+ *           application/json:
+ *             example:
+ *               message: Error message details
+ */
+
+/**
+ * @typedef {object} TaskInput
+ * @property {string} field1 - Description of field1.
+ * @property {string} field2 - Description of field2.
+ * @property {string} owner - ID of the task owner.
+ */
+
 taskRouter.post('/tasks' , auth  , async (req, res)=>{
     const task = new Task({
         ...req.body,
@@ -96,6 +176,58 @@ taskRouter.post('/tasks' , auth  , async (req, res)=>{
 })
 
 //Update Task
+
+/**
+ * @swagger
+ * /tasks/{id}:
+ *   patch:
+ *     summary: Update a task by ID
+ *     description: Endpoint to update a task by its ID.
+ *     tags:
+ *       - Tasks
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         description: ID of the task to be updated.
+ *         required: true
+ *         type: string
+ *       - in: body
+ *         name: updates
+ *         description: The updates to be applied to the task.
+ *         required: true
+ *         schema:
+ *           type: object
+ *           properties:
+ *             description:
+ *               type: string
+ *             completed:
+ *               type: boolean
+ *           example:
+ *             description: Updated task description
+ *             completed: true
+ *     responses:
+ *       200:
+ *         description: Successfully updated task.
+ *         content:
+ *           application/json:
+ *             example:
+ *               _id: taskId
+ *       400:
+ *         description: Bad Request. Invalid update keys provided.
+ *         content:
+ *           application/json:
+ *             example:
+ *               error: Invalid updates keys
+ *       404:
+ *         description: Not Found. Task with the given ID not found.
+ *         content:
+ *           text/plain:
+ *             example: Task not found
+ *       500:
+ *         description: Internal Server Error. Indicates a failure in task update.
+ */
 taskRouter.patch('/tasks/:id' , auth  , async (req , res)=>{
     const updates = Object.keys(req.body)
     const allowupdates = ['description' , 'completed']
@@ -105,6 +237,7 @@ taskRouter.patch('/tasks/:id' , auth  , async (req , res)=>{
         return res.status(400).send({error: 'Invalid updates keys'})
     }
     try{
+        
         const task = await Task.findOne({_id: req.params.id  , owner: req.user._id})
         if(!task){
             return res.status(404).send("Task not found")
@@ -119,6 +252,38 @@ taskRouter.patch('/tasks/:id' , auth  , async (req , res)=>{
 })
 
 //DELETE TASK
+
+/**
+ * @swagger
+ * /tasks/{id}:
+ *   delete:
+ *     summary: Delete a task by ID
+ *     description: Endpoint to delete a task by its ID.
+ *     tags:
+ *       - Tasks
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         description: ID of the task to be deleted.
+ *         required: true
+ *         type: string
+ *     responses:
+ *       200:
+ *         description: Successfully deleted task.
+ *         content:
+ *           application/json:
+ *             example:
+ *               _id: taskId
+ *       404:
+ *         description: Not Found. Task with the given ID not found.
+ *         content:
+ *           text/plain:
+ *             example: Task not found
+ *       500:
+ *         description: Internal Server Error. Indicates a failure in task deletion.
+ */
 taskRouter.delete('/tasks/:id' , auth  , async (req , res) => {
     try{
         const task = await Task.findOneAndDelete({_id: req.params.id , owner: req.user.id})
