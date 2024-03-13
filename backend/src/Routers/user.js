@@ -215,8 +215,8 @@ router.get('/users/:id' , async (req, res)=>{
  *       content:
  *         application/json:
  *           example:
- *             username: newUser123
- *             email: newuser@example.com
+ *             name: Daniel
+ *             email: Daniel@example.com
  *             password: userpassword
  *     responses:
  *       201:

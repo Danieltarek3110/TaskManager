@@ -52,6 +52,32 @@ const taskRouter = new express.Router();
  * @throws {Error} 500 - If there is an internal server error.
  * @returns {Object} - The response object containing tasks or an error message.
  */
+taskRouter.get('/tasks' , auth , async(req , res)=>{
+    const match = {}
+    if(req.query.completed){
+        match.completed = req.query.completed === 'true'
+    }
+    if(req.query.description){
+        match.description = req.query.description
+    }
+    console.log(match)
+
+    try{
+        await req.user.populate({
+            path: 'tasks',
+            match: match,
+            options: {
+                limit: parseInt(req.query.limit),
+                skip: parseInt(req.query.skip)
+            }
+        })
+        res.send(req.user.tasks);
+
+    }catch(e){
+        res.status(500).send();
+    }
+})
+
 taskRouter.get('/tasks' , auth  , async (req, res)=>{
     try{
         const task = await Task.find({owner: req.user._id})
@@ -64,6 +90,8 @@ taskRouter.get('/tasks' , auth  , async (req, res)=>{
 
     }
 })
+
+
 
 //Get task by Id for current user
 

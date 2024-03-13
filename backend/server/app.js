@@ -8,7 +8,7 @@ const taskRouter = require('../src/Routers/task');
 const cors = require('cors');
 
 const app = express();
-// Serve Swagger documentation
+
 app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(swaggerSpec));
 const port = process.env.PORT || 3000
 
