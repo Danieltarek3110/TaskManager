@@ -3,6 +3,7 @@ const User = require('../models/user')
 const auth = require('../middleware/authentication')
 const router = new express.Router()
 const Task = require('../models/task')
+const multer = require('multer');
 
 //Get current user
 
@@ -485,6 +486,82 @@ router.delete('/users/:id' , async (req , res) => {
     }catch(err){
         res.status(500).send();
     }
+})
+
+const upload = multer({
+    limits: {
+        fileSize: 1000000
+    },
+    fileFilter(req , file , cb){
+        const fileName = file.originalname
+
+        if(!fileName.match(/\.(png|jpg|jpeg)$/)){
+            return cb(new Error(' Error: File must be of type .jpg, .jpeg or .png '))
+        }
+        return cb(undefined , true)
+
+        //cb(undefined , false)
+    }
+})
+
+
+/**
+ * @swagger
+ * /users/me/avatar:
+ *   post:
+ *     summary: Upload profile picture for current user
+ *     description: Endpoint to upload an avatar image for the authenticated user.
+ *     tags:
+ *       - Users
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               avatar:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: Avatar uploaded successfully.
+ *       400:
+ *         description: Bad Request. Indicates an error occurred during file upload.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *       500:
+ *         description: Internal Server Error. Indicates a failure in uploading the avatar.
+ */
+router.post('/users/me/avatar' ,auth ,upload.single('avatar') , async (req , res)=>{
+    try{
+        req.user.avatar = req.file.buffer
+        await req.user.save()
+        res.status(200).send()
+    }catch(err){
+        res.status(500).send()
+    }
+
+} , (error , req , res , next)=>{
+    res.status(400).send({ error: error.message })
+})
+
+router.delete('/users/me/avatar' ,auth , async (req , res)=>{
+    try{
+        req.user.avatar = undefined
+        await req.user.save()
+        res.status(200).send()
+    }catch(err){
+        res.status(500).send()
+    }
+
 })
 
 

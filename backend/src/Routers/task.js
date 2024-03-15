@@ -9,40 +9,39 @@ const taskRouter = new express.Router();
  * @swagger
  * /tasks:
  *   get:
- *     summary: Get tasks for the authenticated user
- *     description: Retrieve tasks associated with the authenticated user.
+ *     summary: Get tasks
+ *     description: Endpoint to retrieve tasks belonging to the authenticated user.
  *     tags:
  *       - Tasks
  *     security:
- *       - bearerAuth: []
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: completed
+ *         description: Filter tasks by completion status.
+ *         schema:
+ *           type: boolean
+ *       - in: query
+ *         name: description
+ *         description: Filter tasks by description.
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: sortBy
+ *         description: Sort tasks by a field and order (e.g., "field:order").
+ *         schema:
+ *           type: string
  *     responses:
  *       200:
- *         description: Successful response with tasks for the user.
+ *         description: Successfully retrieved tasks.
  *         content:
  *           application/json:
- *             example:
- *               [
- *                 {
- *                   "_id": "60f3a5418fdd65699c74b227",
- *                   "title": "Sample Task",
- *                   "description": "This is a sample task",
- *                   "owner": "60f3a5418fdd65699c74b226",
- *                   "createdAt": "2022-07-18T12:34:56.789Z",
- *                   "updatedAt": "2022-07-18T12:34:56.789Z"
- *                 },
- *                 // Additional task objects
- *               ]
- *       404:
- *         description: Task not found for the authenticated user.
- *         content:
- *           text/plain:
- *             example: Task not found
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Task'
  *       500:
- *         description: Internal server error.
- *         content:
- *           text/plain:
- *             example: Internal Server Error
- *
+ *         description: Internal Server Error. Indicates a failure in retrieving tasks.
  * @function
  * @name getTasks
  * @param {Object} req - Express request object.
