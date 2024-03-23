@@ -4,6 +4,7 @@ const auth = require('../middleware/authentication')
 const router = new express.Router()
 const Task = require('../models/task')
 const multer = require('multer');
+const sendEmail =  require('../emails/account');
 
 //Get current user
 
@@ -242,6 +243,7 @@ router.post('/users' , async (req, res)=>{
     try{
         const token = await user.generateAuthToken();
         await user.save();
+        await sendEmail(user.email , user.name);
         res.status(201).send({user , token});
     }catch(e){
         res.status(500).send(e);
@@ -560,6 +562,20 @@ router.delete('/users/me/avatar' ,auth , async (req , res)=>{
         res.status(200).send()
     }catch(err){
         res.status(500).send()
+    }
+
+})
+
+router.get('/users/:id/avatar' , async (req , res)=>{
+    try{
+        const user = await User.findById(req.params.id);
+        if(!user || !user.avatar){
+            res.status(404).send("User id not found");
+        }
+        res.set('Content-Type'  , 'image/jpg')
+        res.send(user.avatar);
+    }catch(err){
+        res.status(404).send();
     }
 
 })

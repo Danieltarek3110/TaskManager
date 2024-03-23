@@ -1,6 +1,7 @@
 const express = require('express');
 const swaggerUI = require('swagger-ui-express');
 const swaggerSpec = require('../src/Swagger/Swagger');
+require('dotenv').config({ path: './config/dev.env' });
 
 require('../src/DB/mongoose');
 const userRouter = require('../src/Routers/user')
@@ -10,7 +11,7 @@ const cors = require('cors');
 const app = express();
 
 app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(swaggerSpec));
-const port = process.env.PORT || 3000
+const port = process.env.PORT
 
 app.use(cors());
 
