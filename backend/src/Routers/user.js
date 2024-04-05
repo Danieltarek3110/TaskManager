@@ -2,12 +2,11 @@ const express = require('express')
 const User = require('../models/user')
 const auth = require('../middleware/authentication')
 const router = new express.Router()
-const Task = require('../models/task')
 const multer = require('multer');
-const sendEmail =  require('../emails/account');
+
+const {getCurrentUser, deleteCurrentUser, logoutUser, logoutAll, getUserById, createUser, login, updateUserById, updateCurrentUser, deleteUserById} = require('../controller/userController')
 
 //Get current user
-
 /**
  * @swagger
  * /users/me:
@@ -35,10 +34,7 @@ const sendEmail =  require('../emails/account');
  *       500:
  *         description: Internal Server Error. Indicates a failure in retrieving user profile.
  */
-router.get('/users/me' , auth ,async (req, res)=>{
-        res.send(req.user)
-
-})
+router.get('/users/me' , auth , getCurrentUser)
 
 // DELETE CURRENT USER
 /**
@@ -71,27 +67,10 @@ router.get('/users/me' , auth ,async (req, res)=>{
  *             example:
  *               error: Internal Server Error
  */
-router.delete('/users/me', auth, async (req, res) => {
-    try {
-        const user = await User.findById(req.user.id);
-
-        if (!user) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-        await Task.deleteMany({ owner: req.user.id });
-        await User.deleteOne({ _id: req.user.id });
-
-        res.status(200).json({ message: 'User deleted successfully' });
-
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Internal Server Error' });
-    }
-});
+router.delete('/users/me', auth, deleteCurrentUser);
 
 
 //LOGOUT
-
 /**
  * @swagger
  * /users/logout:
@@ -112,20 +91,9 @@ router.delete('/users/me', auth, async (req, res) => {
  *         description: Internal Server Error. Indicates a failure in logging out the user.
  */
 
-router.post('/users/logout' , auth , async (req , res)=>{
-    try{
-        req.user.tokens = req.user.tokens.filter((token)=>{
-            return token.token !== req.token
-        })
-        await req.user.save();
-        res.status(200).send('Logout Successfully')
-    }catch(err){
-        res.status(500).send()
-    }
-})
+router.post('/users/logout' , auth , logoutUser)
 
 //LOGOUT of all sessions
-
 /**
  * @swagger
  * /users/logoutAll:
@@ -145,18 +113,9 @@ router.post('/users/logout' , auth , async (req , res)=>{
  *       500:
  *         description: Internal Server Error. Indicates a failure in logging out the user from all sessions.
  */
-router.post('/users/logoutAll' , auth , async (req , res)=>{
-    try{
-        req.user.tokens = [];
-        await req.user.save();
-        res.status(200).send('Logout Successfully')
-    }catch(err){
-        res.status(500).send()
-    }
-})
+router.post('/users/logoutAll' , auth , logoutAll)
 
 //Get user by ID
-
 /**
  * @swagger
  * /users/{id}:
@@ -188,19 +147,7 @@ router.post('/users/logoutAll' , auth , async (req , res)=>{
  *       500:
  *         description: Internal Server Error. Indicates a failure in retrieving user information.
  */
-router.get('/users/:id' , async (req, res)=>{
-    try{
-        const user = await User.findById(req.params.id);
-        if(!user){
-            res.status(404).send("Id not found");
-        }else{
-            res.status(200).send(user);
-        }
-
-    }catch(e){
-        res.status(400).send();
-    }
-})
+router.get('/users/:id' , getUserById)
 
 //Create User
 /**
@@ -238,21 +185,9 @@ router.get('/users/:id' , async (req, res)=>{
  *             example:
  *               error: Error message details
  */
-router.post('/users' , async (req, res)=>{
-    const user = new User(req.body);
-    try{
-        const token = await user.generateAuthToken();
-        await user.save();
-        await sendEmail(user.email , user.name);
-        res.status(201).send({user , token});
-    }catch(e){
-        res.status(500).send(e);
-        console.log(e)
-    }
-})
+router.post('/users' , createUser)
 
 //LOGIN USER
-
 /**
  * @swagger
  * /users/login:
@@ -267,8 +202,8 @@ router.post('/users' , async (req, res)=>{
  *       content:
  *         application/json:
  *           example:
- *             email: user@example.com
- *             password: userpassword
+ *             email: Daniel@example.com
+ *             password: Daniel@24Tarek
  *     responses:
  *       200:
  *         description: Successfully authenticated and logged in user.
@@ -293,20 +228,9 @@ router.post('/users' , async (req, res)=>{
  *             example:
  *               error: Error message details
  */
-router.post('/users/login' , async (req , res)=>{
-    try{
-        const user = await User.findByCredentials(req.body.email , req.body.password)
-        const token = await user.generateAuthToken()
-        res.status(200).send({ user , token});
-
-    }catch(err){
-        res.status(400).send(err.toString())
-        console.log(err)
-    }
-})
+router.post('/users/login' ,login)
 
 //UPDATE USER
-
 /**
  * @swagger
  * /users/Admin/{id}:
@@ -357,34 +281,9 @@ router.post('/users/login' , async (req , res)=>{
  *             example:
  *               error: Error message details
  */
-router.patch('/users/Admin/:id' , async(req , res)=>{
-    
-    const updates = Object.keys(req.body);
-    const allowupdates = ['name', 'email' , 'password' , 'Age']
-    const isValidOperation = updates.every((update)=> allowupdates.includes(update))
-    if(!isValidOperation){
-        return res.status(400).send({error: 'Invalid updates keys'})
-    }
-    try{
-        const user = await User.findByIdAndUpdate(req.params.id)
-        updates.forEach((update)=> user[update] = req.body[update])
-        
-        const data = await user.save()
-        if(!data){
-            return res.status(300).send()
-        }
-        
-        if(!user){
-            return res.status(404).send();
-        }
-        res.status(200).send(user)
-    }catch(err){
-        res.status(500).send(err);
-    }
-})
+router.patch('/users/Admin/:id' , updateUserById)
 
 //UPDATE CUURENT USER
-
 /**
  * @swagger
  * /users/me:
@@ -429,28 +328,9 @@ router.patch('/users/Admin/:id' , async(req , res)=>{
  *             example:
  *               error: Error message details
  */
-router.patch('/users/me' , auth , async(req , res)=>{
-    const updates = Object.keys(req.body);
-    const allowupdates = ['name', 'email' , 'password' , 'Age']
-    const isValidOperation = updates.every((update)=> allowupdates.includes(update))
-    if(!isValidOperation){
-        return res.status(400).send({error: 'Invalid updates keys'})
-    }
-    try{
-        updates.forEach((update)=> req.user[update] = req.body[update])
-        
-        const data = await req.user.save()
-        if(!data){
-            return res.status(300).send()
-        }
-        res.status(200).send(req.user)
-    }catch(err){
-        res.status(500).send(err);
-    }
-})
+router.patch('/users/me' , auth , updateCurrentUser)
 
 //DELETE USER
-
 /**
  * @swagger
  * /users/{id}:
@@ -477,19 +357,9 @@ router.patch('/users/me' , auth , async(req , res)=>{
  *       500:
  *         description: Internal Server Error. Indicates a failure in user deletion.
  */
-router.delete('/users/:id' , async (req , res) => {
-    try{
-        const user = await User.findByIdAndDelete(req.params.id)
-        if(!user){
-            return res.status(404).send()
-        }
-        res.status(200).send(user);
+router.delete('/users/:id' , deleteUserById)
 
-    }catch(err){
-        res.status(500).send();
-    }
-})
-
+//MULTER
 const upload = multer({
     limits: {
         fileSize: 1000000
@@ -506,7 +376,7 @@ const upload = multer({
     }
 })
 
-
+//Upload Avatar for current User
 /**
  * @swagger
  * /users/me/avatar:
@@ -555,6 +425,7 @@ router.post('/users/me/avatar' ,auth ,upload.single('avatar') , async (req , res
     res.status(400).send({ error: error.message })
 })
 
+//Delete Avatar for current User
 router.delete('/users/me/avatar' ,auth , async (req , res)=>{
     try{
         req.user.avatar = undefined
@@ -566,6 +437,7 @@ router.delete('/users/me/avatar' ,auth , async (req , res)=>{
 
 })
 
+//Get Avatar By UserID
 router.get('/users/:id/avatar' , async (req , res)=>{
     try{
         const user = await User.findById(req.params.id);
@@ -579,7 +451,5 @@ router.get('/users/:id/avatar' , async (req , res)=>{
     }
 
 })
-
-
 
 module.exports = router

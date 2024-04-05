@@ -1,10 +1,9 @@
 const express = require('express');
-const Task = require('../models/task')
 const auth = require('../middleware/authentication')
+const {getAllUserTasks , getTaskById, createTask, updateTask, deleteTask} = require('../controller/taskController')
 const taskRouter = new express.Router();
 
 //Get all tasks for current user
-
 /**
  * @swagger
  * /tasks:
@@ -51,55 +50,9 @@ const taskRouter = new express.Router();
  * @throws {Error} 500 - If there is an internal server error.
  * @returns {Object} - The response object containing tasks or an error message.
  */
-taskRouter.get('/tasks' , auth , async(req , res)=>{
-    const match = {}
-    const sort = {}
-    if(req.query.completed){
-        match.completed = req.query.completed === 'true'
-    }
-    if(req.query.description){
-        match.description = req.query.description
-    }
-    if(req.query.sortBy){
-        const parts = req.query.sortBy.split(':');
-        sort[parts[0]] = parts[1] === "desc" ? -1 : 1 
-    }
-    console.log(match)
-
-    try{
-        await req.user.populate({
-            path: 'tasks',
-            match: match,
-            options: {
-                limit: parseInt(req.query.limit),
-                skip: parseInt(req.query.skip),
-                sort
-            }
-        })
-        res.send(req.user.tasks);
-
-    }catch(e){
-        res.status(500).send();
-    }
-})
-
-taskRouter.get('/tasks' , auth  , async (req, res)=>{
-    try{
-        const task = await Task.find({owner: req.user._id})
-        if(task.$isEmpty){
-            res.status(404).send("Task not found")
-        }
-        res.status(200).send(task)
-    }catch(err){
-        res.status(500).send()
-
-    }
-})
-
-
+taskRouter.get('/tasks' , auth , getAllUserTasks )
 
 //Get task by Id for current user
-
 /**
  * @swagger
  * /tasks/{id}:
@@ -140,19 +93,7 @@ taskRouter.get('/tasks' , auth  , async (req, res)=>{
  *           text/plain:
  *             example: Internal Server Error
  */
-taskRouter.get('/tasks/:id' , auth , async (req, res)=>{
-    const _id = req.params.id;
-    try{
-        const task = await Task.findOne({_id ,  owner: req.user._id})
-        if(!task){
-            res.status(404).send("Task not found")
-        }
-        res.status(200).send(task)
-    }catch(err){
-        res.status(500).send()
-
-    }
-})
+taskRouter.get('/tasks/:id' , auth , getTaskById)
 
 // Create Task
 /**
@@ -186,30 +127,15 @@ taskRouter.get('/tasks/:id' , auth , async (req, res)=>{
  *             example:
  *               message: Error message details
  */
-
 /**
  * @typedef {object} TaskInput
  * @property {string} field1 - Description of field1.
  * @property {string} field2 - Description of field2.
  * @property {string} owner - ID of the task owner.
  */
-
-taskRouter.post('/tasks' , auth  , async (req, res)=>{
-    const task = new Task({
-        ...req.body,
-        owner: req.user._id
-    })
-    
-    try{
-        await task.save();
-        res.status(201).send(task);
-    }catch(err){
-        res.status(500).send(err.errors)
-    }
-})
+taskRouter.post('/tasks' , auth  , createTask)
 
 //Update Task
-
 /**
  * @swagger
  * /tasks/{id}:
@@ -261,31 +187,9 @@ taskRouter.post('/tasks' , auth  , async (req, res)=>{
  *       500:
  *         description: Internal Server Error. Indicates a failure in task update.
  */
-taskRouter.patch('/tasks/:id' , auth  , async (req , res)=>{
-    const updates = Object.keys(req.body)
-    const allowupdates = ['description' , 'completed']
-    const isValidOperation = updates.every((update)=> allowupdates.includes(update))
-    
-    if(!isValidOperation){
-        return res.status(400).send({error: 'Invalid updates keys'})
-    }
-    try{
-        
-        const task = await Task.findOne({_id: req.params.id  , owner: req.user._id})
-        if(!task){
-            return res.status(404).send("Task not found")
-        }
-        updates.forEach((update)=> task[update]= req.body[update])
-        await task.save()
-        res.status(200).send(task);
-    }catch(err){
-        res.status(500).send()
-    }
-
-})
+taskRouter.patch('/tasks/:id' , auth  , updateTask)
 
 //DELETE TASK
-
 /**
  * @swagger
  * /tasks/{id}:
@@ -317,19 +221,22 @@ taskRouter.patch('/tasks/:id' , auth  , async (req , res)=>{
  *       500:
  *         description: Internal Server Error. Indicates a failure in task deletion.
  */
-taskRouter.delete('/tasks/:id' , auth  , async (req , res) => {
-    try{
-        const task = await Task.findOneAndDelete({_id: req.params.id , owner: req.user.id})
-        if(!task){
-            return res.status(404).send("Task not found")
-        }
-        res.status(200).send(task);
+taskRouter.delete('/tasks/:id' , auth  , deleteTask)
 
+module.exports = taskRouter
+/* 
+
+taskRouter.get('/tasks' , auth  , async (req, res)=>{
+    try{
+        const task = await Task.find({owner: req.user._id})
+        if(task.$isEmpty){
+            res.status(404).send("Task not found")
+        }
+        res.status(200).send(task)
     }catch(err){
-        res.status(500).send();
+        res.status(500).send()
+
     }
 })
 
-
-
-module.exports = taskRouter
+*/
