@@ -2,10 +2,12 @@ const User = require("../models/user");
 const Task = require("../models/task");
 const sendEmail = require("../emails/account");
 
+//Get Current User
 const getCurrentUser = async (req, res) => {
   res.send(req.user);
 };
 
+//Delete Current User
 const deleteCurrentUser = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
@@ -23,6 +25,7 @@ const deleteCurrentUser = async (req, res) => {
   }
 };
 
+//Logout User
 const logoutUser = async (req, res) => {
   try {
     req.user.tokens = req.user.tokens.filter((token) => {
@@ -35,6 +38,7 @@ const logoutUser = async (req, res) => {
   }
 };
 
+//Logout User from All Sessions
 const logoutAll = async (req, res) => {
   try {
     req.user.tokens = [];
@@ -45,6 +49,7 @@ const logoutAll = async (req, res) => {
   }
 };
 
+//Get User by Id (ADMIN)
 const getUserById = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
@@ -58,6 +63,7 @@ const getUserById = async (req, res) => {
   }
 };
 
+//Create User
 const createUser = async (req, res) => {
   const user = new User(req.body);
   try {
@@ -71,12 +77,16 @@ const createUser = async (req, res) => {
   }
 };
 
+//Login User
 const login = async (req, res) => {
   try {
     const user = await User.findByCredentials(
       req.body.email,
       req.body.password
     );
+    if(!user){
+      res.status(400).send("Cannot find user")
+    }
     const token = await user.generateAuthToken();
     res.status(200).send({ user, token });
   } catch (err) {
@@ -85,6 +95,7 @@ const login = async (req, res) => {
   }
 };
 
+//Update User by Id (ADMIN)
 const updateUserById = async (req, res) => {
   const updates = Object.keys(req.body);
   const allowupdates = ["name", "email", "password", "Age"];
@@ -112,6 +123,7 @@ const updateUserById = async (req, res) => {
   }
 };
 
+// Update Current User 
 const updateCurrentUser = async (req, res) => {
   const updates = Object.keys(req.body);
   const allowupdates = ["name", "email", "password", "Age"];
@@ -134,6 +146,7 @@ const updateCurrentUser = async (req, res) => {
   }
 };
 
+//Delete User by ID (ADMIN)
 const deleteUserById = async (req, res) => {
   try {
     const user = await User.findByIdAndDelete(req.params.id);
