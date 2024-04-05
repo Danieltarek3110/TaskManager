@@ -1,10 +1,21 @@
-const express = require('express')
-const User = require('../models/user')
-const auth = require('../middleware/authentication')
-const router = new express.Router()
-const multer = require('multer');
+const express = require("express");
+const User = require("../models/user");
+const auth = require("../middleware/authentication");
+const router = new express.Router();
+const multer = require("multer");
 
-const {getCurrentUser, deleteCurrentUser, logoutUser, logoutAll, getUserById, createUser, login, updateUserById, updateCurrentUser, deleteUserById} = require('../controller/userController')
+const {
+  getCurrentUser,
+  deleteCurrentUser,
+  logoutUser,
+  logoutAll,
+  getUserById,
+  createUser,
+  login,
+  updateUserById,
+  updateCurrentUser,
+  deleteUserById,
+} = require("../controller/userController");
 
 //Get current user
 /**
@@ -34,7 +45,7 @@ const {getCurrentUser, deleteCurrentUser, logoutUser, logoutAll, getUserById, cr
  *       500:
  *         description: Internal Server Error. Indicates a failure in retrieving user profile.
  */
-router.get('/users/me' , auth , getCurrentUser)
+router.get("/users/me", auth, getCurrentUser);
 
 // DELETE CURRENT USER
 /**
@@ -67,8 +78,7 @@ router.get('/users/me' , auth , getCurrentUser)
  *             example:
  *               error: Internal Server Error
  */
-router.delete('/users/me', auth, deleteCurrentUser);
-
+router.delete("/users/me", auth, deleteCurrentUser);
 
 //LOGOUT
 /**
@@ -90,8 +100,7 @@ router.delete('/users/me', auth, deleteCurrentUser);
  *       500:
  *         description: Internal Server Error. Indicates a failure in logging out the user.
  */
-
-router.post('/users/logout' , auth , logoutUser)
+router.post("/users/logout", auth, logoutUser);
 
 //LOGOUT of all sessions
 /**
@@ -113,7 +122,7 @@ router.post('/users/logout' , auth , logoutUser)
  *       500:
  *         description: Internal Server Error. Indicates a failure in logging out the user from all sessions.
  */
-router.post('/users/logoutAll' , auth , logoutAll)
+router.post("/users/logoutAll", auth, logoutAll);
 
 //Get user by ID
 /**
@@ -147,7 +156,7 @@ router.post('/users/logoutAll' , auth , logoutAll)
  *       500:
  *         description: Internal Server Error. Indicates a failure in retrieving user information.
  */
-router.get('/users/:id' , getUserById)
+router.get("/users/:id", getUserById);
 
 //Create User
 /**
@@ -185,7 +194,7 @@ router.get('/users/:id' , getUserById)
  *             example:
  *               error: Error message details
  */
-router.post('/users' , createUser)
+router.post("/users", createUser);
 
 //LOGIN USER
 /**
@@ -228,7 +237,7 @@ router.post('/users' , createUser)
  *             example:
  *               error: Error message details
  */
-router.post('/users/login' ,login)
+router.post("/users/login", login);
 
 //UPDATE USER
 /**
@@ -281,7 +290,7 @@ router.post('/users/login' ,login)
  *             example:
  *               error: Error message details
  */
-router.patch('/users/Admin/:id' , updateUserById)
+router.patch("/users/Admin/:id", updateUserById);
 
 //UPDATE CUURENT USER
 /**
@@ -328,7 +337,7 @@ router.patch('/users/Admin/:id' , updateUserById)
  *             example:
  *               error: Error message details
  */
-router.patch('/users/me' , auth , updateCurrentUser)
+router.patch("/users/me", auth, updateCurrentUser);
 
 //DELETE USER
 /**
@@ -357,24 +366,24 @@ router.patch('/users/me' , auth , updateCurrentUser)
  *       500:
  *         description: Internal Server Error. Indicates a failure in user deletion.
  */
-router.delete('/users/:id' , deleteUserById)
+router.delete("/users/:id", deleteUserById);
 
 //MULTER
 const upload = multer({
-    limits: {
-        fileSize: 1000000
-    },
-    fileFilter(req , file , cb){
-        const fileName = file.originalname
+  limits: {
+    fileSize: 1000000,
+  },
+  fileFilter(req, file, cb) {
+    const fileName = file.originalname;
 
-        if(!fileName.match(/\.(png|jpg|jpeg)$/)){
-            return cb(new Error(' Error: File must be of type .jpg, .jpeg or .png '))
-        }
-        return cb(undefined , true)
-
-        //cb(undefined , false)
+    if (!fileName.match(/\.(png|jpg|jpeg)$/)) {
+      return cb(new Error(" Error: File must be of type .jpg, .jpeg or .png "));
     }
-})
+    return cb(undefined, true);
+
+    //cb(undefined , false)
+  },
+});
 
 //Upload Avatar for current User
 /**
@@ -412,44 +421,47 @@ const upload = multer({
  *       500:
  *         description: Internal Server Error. Indicates a failure in uploading the avatar.
  */
-router.post('/users/me/avatar' ,auth ,upload.single('avatar') , async (req , res)=>{
-    try{
-        req.user.avatar = req.file.buffer
-        await req.user.save()
-        res.status(200).send()
-    }catch(err){
-        res.status(500).send()
+router.post(
+  "/users/me/avatar",
+  auth,
+  upload.single("avatar"),
+  async (req, res) => {
+    try {
+      req.user.avatar = req.file.buffer;
+      await req.user.save();
+      res.status(200).send();
+    } catch (err) {
+      res.status(500).send();
     }
-
-} , (error , req , res , next)=>{
-    res.status(400).send({ error: error.message })
-})
+  },
+  (error, req, res, next) => {
+    res.status(400).send({ error: error.message });
+  }
+);
 
 //Delete Avatar for current User
-router.delete('/users/me/avatar' ,auth , async (req , res)=>{
-    try{
-        req.user.avatar = undefined
-        await req.user.save()
-        res.status(200).send()
-    }catch(err){
-        res.status(500).send()
-    }
-
-})
+router.delete("/users/me/avatar", auth, async (req, res) => {
+  try {
+    req.user.avatar = undefined;
+    await req.user.save();
+    res.status(200).send();
+  } catch (err) {
+    res.status(500).send();
+  }
+});
 
 //Get Avatar By UserID
-router.get('/users/:id/avatar' , async (req , res)=>{
-    try{
-        const user = await User.findById(req.params.id);
-        if(!user || !user.avatar){
-            res.status(404).send("User id not found");
-        }
-        res.set('Content-Type'  , 'image/jpg')
-        res.send(user.avatar);
-    }catch(err){
-        res.status(404).send();
+router.get("/users/:id/avatar", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user || !user.avatar) {
+      res.status(404).send("User id not found");
     }
+    res.set("Content-Type", "image/jpg");
+    res.send(user.avatar);
+  } catch (err) {
+    res.status(404).send();
+  }
+});
 
-})
-
-module.exports = router
+module.exports = router;

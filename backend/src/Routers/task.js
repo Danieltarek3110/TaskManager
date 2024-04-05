@@ -1,6 +1,12 @@
-const express = require('express');
-const auth = require('../middleware/authentication')
-const {getAllUserTasks , getTaskById, createTask, updateTask, deleteTask} = require('../controller/taskController')
+const express = require("express");
+const auth = require("../middleware/authentication");
+const {
+  getAllUserTasks,
+  getTaskById,
+  createTask,
+  updateTask,
+  deleteTask,
+} = require("../controller/taskController");
 const taskRouter = new express.Router();
 
 //Get all tasks for current user
@@ -50,7 +56,7 @@ const taskRouter = new express.Router();
  * @throws {Error} 500 - If there is an internal server error.
  * @returns {Object} - The response object containing tasks or an error message.
  */
-taskRouter.get('/tasks' , auth , getAllUserTasks )
+taskRouter.get("/tasks", auth, getAllUserTasks);
 
 //Get task by Id for current user
 /**
@@ -93,7 +99,7 @@ taskRouter.get('/tasks' , auth , getAllUserTasks )
  *           text/plain:
  *             example: Internal Server Error
  */
-taskRouter.get('/tasks/:id' , auth , getTaskById)
+taskRouter.get("/tasks/:id", auth, getTaskById);
 
 // Create Task
 /**
@@ -133,7 +139,7 @@ taskRouter.get('/tasks/:id' , auth , getTaskById)
  * @property {string} field2 - Description of field2.
  * @property {string} owner - ID of the task owner.
  */
-taskRouter.post('/tasks' , auth  , createTask)
+taskRouter.post("/tasks", auth, createTask);
 
 //Update Task
 /**
@@ -187,7 +193,7 @@ taskRouter.post('/tasks' , auth  , createTask)
  *       500:
  *         description: Internal Server Error. Indicates a failure in task update.
  */
-taskRouter.patch('/tasks/:id' , auth  , updateTask)
+taskRouter.patch("/tasks/:id", auth, updateTask);
 
 //DELETE TASK
 /**
@@ -221,22 +227,6 @@ taskRouter.patch('/tasks/:id' , auth  , updateTask)
  *       500:
  *         description: Internal Server Error. Indicates a failure in task deletion.
  */
-taskRouter.delete('/tasks/:id' , auth  , deleteTask)
+taskRouter.delete("/tasks/:id", auth, deleteTask);
 
-module.exports = taskRouter
-/* 
-
-taskRouter.get('/tasks' , auth  , async (req, res)=>{
-    try{
-        const task = await Task.find({owner: req.user._id})
-        if(task.$isEmpty){
-            res.status(404).send("Task not found")
-        }
-        res.status(200).send(task)
-    }catch(err){
-        res.status(500).send()
-
-    }
-})
-
-*/
+module.exports = taskRouter;

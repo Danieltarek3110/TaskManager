@@ -1,5 +1,8 @@
 const mongoose = require("mongoose");
-require("dotenv").config({ path: process.env.NODE_ENV === 'test' ? "./config/test.env" : "./config/dev.env" });
+require("dotenv").config({
+  path:
+    process.env.NODE_ENV === "test" ? "./config/test.env" : "./config/dev.env",
+});
 //require("dotenv").config({ path: "./config/test.env" });
 
 //Connect to MongoDB
