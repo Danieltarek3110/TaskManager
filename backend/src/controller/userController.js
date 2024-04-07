@@ -69,7 +69,7 @@ const createUser = async (req, res) => {
   try {
     const token = await user.generateAuthToken();
     await user.save();
-    await sendEmail(user.email, user.name);
+    //await sendEmail(user.email, user.name);
     res.status(201).send({ user, token });
   } catch (e) {
     res.status(500).send(e);

@@ -46,7 +46,6 @@ const getTaskById = async (req, res)=>{
     }
 }
 
-
 const createTask = async (req, res)=>{
     const task = new Task({
         ...req.body,
